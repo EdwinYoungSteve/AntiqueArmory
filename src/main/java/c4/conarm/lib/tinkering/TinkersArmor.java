@@ -180,7 +180,7 @@ public abstract class TinkersArmor extends ItemArmor implements ITinkerable, IAr
     @Override
     public ModelBiped getArmorModel(EntityLivingBase entityLiving, ItemStack itemStack, EntityEquipmentSlot armorSlot, net.minecraft.client.model.ModelBiped _default)
     {
-        if (model == null) {
+        if (model == null || model.getClass() == ModelConstructsArmor.class) {
             model = new ModelConstructsArmor(armorSlot);
         }
         if (brokenModel == null) {
