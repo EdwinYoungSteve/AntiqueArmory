@@ -27,6 +27,7 @@ import crafttweaker.api.item.IIngredient;
 import crafttweaker.api.item.IItemStack;
 import crafttweaker.api.minecraft.CraftTweakerMC;
 import crafttweaker.api.oredict.IOreDictEntry;
+import slimeknights.mantle.util.RecipeMatch;
 import slimeknights.tconstruct.library.TinkerRegistry;
 import slimeknights.tconstruct.library.modifiers.IModifier;
 import slimeknights.tconstruct.library.modifiers.ModifierTrait;
@@ -35,6 +36,8 @@ import stanhebben.zenscript.annotations.Optional;
 import stanhebben.zenscript.annotations.ZenClass;
 import stanhebben.zenscript.annotations.ZenGetter;
 import stanhebben.zenscript.annotations.ZenMethod;
+
+import java.util.Arrays;
 
 /*
  * Base code is from ContentTweaker by The-Acronym-Coders
@@ -63,10 +66,8 @@ public class ConArmTraitRepresentation {
         return new ConArmTraitRepresentation(trait);
     }
 
-
     @ZenMethod
     public void addItem(IIngredient item, @Optional(valueLong = 1) int amountNeeded, @Optional(valueLong = 1) int amountMatched) {
-
         if (!(trait instanceof IModifier)) {
             CraftTweakerAPI.logError("Cannot add item " + item.toCommandString() + " to trait " + toCommandString());
             return;
@@ -82,7 +83,17 @@ public class ConArmTraitRepresentation {
                 addItem(itemStack, amountNeeded, amountMatched);
             }
         }
+    }
 
+    @ZenMethod
+    public void addMultiItem(int amountMatched, IItemStack... items) {
+        if (!(trait instanceof IModifier)) {
+            CraftTweakerAPI.logError("Cannot add items " + Arrays.toString(items) + " to trait " + toCommandString());
+            return;
+        }
+
+        IModifier trait = (IModifier) this.trait;
+        RecipeMatchHolder.addRecipeMatch(trait, new RecipeMatch.ItemCombination(amountMatched, CraftTweakerMC.getItemStacks(items)));
     }
 
     @ZenGetter("identifier")
