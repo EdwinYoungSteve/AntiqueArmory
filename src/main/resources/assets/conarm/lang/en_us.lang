@@ -76,6 +76,7 @@ item.conarm.frosty_soles.tooltip=Frosty Modifier
 gui.armorforge.name=Armor Forge
 gui.armorstation.name=Armor Station
 gui.armorstation.preview=Preview
+gui.armorstation.repair=The main way to repair or change your armor. Place armor and a material on the left to get started.
 gui.armorstation.deconstruct=Deconstruct
 gui.armorstation.deconstruct.info=Place armor in the output slot on the right to deconstruct it if the armor:\n- Is undamaged\n- Can be built in the current table\n- Is not a sealed artifact (Tinkers' Evolution)\n- Has enough XP (Tinkers' Tool Leveling)
 
