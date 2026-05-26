@@ -21,6 +21,7 @@ package c4.conarm.lib.tinkering;
 
 import c4.conarm.client.models.ModelBrokenArmor;
 import c4.conarm.client.models.ModelConstructsArmor;
+import c4.conarm.client.models.ModelConstructsArmorFixed;
 import c4.conarm.common.armor.utils.ArmorHelper;
 import c4.conarm.lib.armor.ArmorModifications;
 import c4.conarm.lib.client.DynamicTextureHelper;
@@ -181,7 +182,7 @@ public abstract class TinkersArmor extends ItemArmor implements ITinkerable, IAr
     public ModelBiped getArmorModel(EntityLivingBase entityLiving, ItemStack itemStack, EntityEquipmentSlot armorSlot, net.minecraft.client.model.ModelBiped _default)
     {
         if (model == null || model.getClass() == ModelConstructsArmor.class) {
-            model = new ModelConstructsArmor(armorSlot);
+            model = new ModelConstructsArmorFixed(armorSlot);
         }
         if (brokenModel == null) {
             brokenModel = new ModelBrokenArmor();
