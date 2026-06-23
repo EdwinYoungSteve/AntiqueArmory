@@ -44,9 +44,12 @@ import slimeknights.tconstruct.library.Util;
 import slimeknights.tconstruct.library.events.TinkerEvent;
 import slimeknights.tconstruct.library.materials.Material;
 import slimeknights.tconstruct.library.modifiers.IModifier;
+import slimeknights.tconstruct.library.modifiers.ModifierNBT;
 import slimeknights.tconstruct.library.modifiers.TinkerGuiException;
 import slimeknights.tconstruct.library.tinkering.PartMaterialType;
 import slimeknights.tconstruct.library.tools.IToolPart;
+import slimeknights.tconstruct.library.traits.AbstractTrait;
+import slimeknights.tconstruct.library.traits.ITrait;
 import slimeknights.tconstruct.library.utils.TagUtil;
 import slimeknights.tconstruct.library.utils.Tags;
 import slimeknights.tconstruct.library.utils.TinkerUtil;
@@ -93,6 +96,13 @@ public class ArmorBuilder {
 
     public static void rebuildArmor(NBTTagCompound rootNBT, TinkersArmor tinkersArmor) throws TinkerGuiException {
 
+        NBTTagList materialTag = TagUtil.getBaseMaterialsTagList(rootNBT);
+        List<Material> materials = TinkerUtil.getMaterialsFromTagList(materialTag);
+        rebuildArmor(rootNBT, tinkersArmor, getMaterialTraitsTagList(materials, tinkersArmor));
+    }
+
+    private static void rebuildArmor(NBTTagCompound rootNBT, TinkersArmor tinkersArmor, NBTTagList oldMaterialTraits) throws TinkerGuiException {
+
         boolean broken = TagUtil.getToolTag(rootNBT).getBoolean(Tags.BROKEN);
         NBTTagList materialTag = TagUtil.getBaseMaterialsTagList(rootNBT);
         List<Material> materials = TinkerUtil.getMaterialsFromTagList(materialTag);
@@ -123,6 +133,8 @@ public class ArmorBuilder {
         ArmoryEvent.OnItemBuilding.fireEvent(rootNBT, ImmutableList.copyOf(materials), tinkersArmor);
 
         NBTTagList modifiers = TagUtil.getBaseModifiersTagList(rootNBT);
+        restoreMissingBaseModifiers(rootNBT, modifiers, modifiersTagOld, oldMaterialTraits);
+        modifiers = TagUtil.getBaseModifiersTagList(rootNBT);
         NBTTagList modifiersTag = TagUtil.getModifiersTagList(rootNBT);
 
         for (int i = 0; i < modifiers.tagCount(); i++) {
@@ -297,6 +309,7 @@ public class ArmorBuilder {
         TinkersArmor armor = (TinkersArmor) armorStack.getItem();
 
         final NBTTagList materialList = TagUtil.getBaseMaterialsTagList(armorStack).copy();
+        NBTTagList oldMaterialTraits = getMaterialTraitsTagList(TinkerUtil.getMaterialsFromTagList(materialList), armor);
 
         for(int i = 0; i < armorParts.size(); i++) {
             ItemStack part = armorParts.get(i);
@@ -360,7 +373,7 @@ public class ArmorBuilder {
         ItemStack output = armorStack.copy();
         TagUtil.setBaseMaterialsTagList(output, materialList);
         NBTTagCompound tag = TagUtil.getTagSafe(output);
-        rebuildArmor(tag, (TinkersArmor) output.getItem());
+        rebuildArmor(tag, (TinkersArmor) output.getItem(), oldMaterialTraits);
         output.setTagCompound(tag);
 
         if(output.getItemDamage() > output.getMaxDamage()) {
@@ -369,5 +382,61 @@ public class ArmorBuilder {
         }
 
         return output;
+    }
+
+    private static NBTTagList getMaterialTraitsTagList(List<Material> materials, TinkersArmor tinkersArmor) {
+
+        NBTTagList materialTraits = new NBTTagList();
+        List<PartMaterialType> pms = tinkersArmor.getRequiredComponents();
+
+        int size = Math.min(materials.size(), pms.size());
+        for (int i = 0; i < size; i++) {
+            PartMaterialType pmt = pms.get(i);
+            Material material = materials.get(i);
+            for(ITrait trait : pmt.getApplicableTraitsForMaterial(material)) {
+                addTraitModifier(materialTraits, trait);
+            }
+        }
+
+        return materialTraits;
+    }
+
+    private static void addTraitModifier(NBTTagList materialTraits, ITrait trait) {
+
+        String identifier = trait.getIdentifier();
+        if (TinkerRegistry.getTrait(identifier) == null) {
+            ConstructsArmory.logger.error("addTrait: Trying to apply unregistered Trait {}", identifier);
+            return;
+        }
+
+        IModifier modifier = TinkerRegistry.getModifier(identifier);
+        if (!(trait instanceof AbstractTrait) || modifier != null) {
+            return;
+        }
+
+        String modifierIdentifier = ((AbstractTrait) trait).getModifierIdentifier();
+        if (TinkerUtil.getIndexInList(materialTraits, modifierIdentifier) < 0) {
+            materialTraits.appendTag(new NBTTagString(modifierIdentifier));
+        }
+    }
+
+    private static void restoreMissingBaseModifiers(NBTTagCompound rootNBT, NBTTagList modifiers,
+                                                    NBTTagList oldModifierTags, NBTTagList oldMaterialTraits) {
+
+        boolean changed = false;
+        for (int i = 0; i < oldModifierTags.tagCount(); i++) {
+            NBTTagCompound tag = oldModifierTags.getCompoundTagAt(i);
+            String identifier = ModifierNBT.readTag(tag).identifier;
+            if (!identifier.isEmpty()
+                    && TinkerUtil.getIndexInList(modifiers, identifier) < 0
+                    && TinkerUtil.getIndexInList(oldMaterialTraits, identifier) < 0) {
+                modifiers.appendTag(new NBTTagString(identifier));
+                changed = true;
+            }
+        }
+
+        if (changed) {
+            TagUtil.setBaseModifiersTagList(rootNBT, modifiers);
+        }
     }
 }
