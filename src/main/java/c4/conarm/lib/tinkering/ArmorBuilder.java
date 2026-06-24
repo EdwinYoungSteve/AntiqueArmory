@@ -409,13 +409,16 @@ public class ArmorBuilder {
             return;
         }
 
-        IModifier modifier = TinkerRegistry.getModifier(identifier);
-        if (!(trait instanceof AbstractTrait) || modifier != null) {
+        if (TinkerUtil.getIndexInList(materialTraits, identifier) < 0) {
+            materialTraits.appendTag(new NBTTagString(identifier));
+        }
+
+        if (!(trait instanceof AbstractTrait)) {
             return;
         }
 
         String modifierIdentifier = ((AbstractTrait) trait).getModifierIdentifier();
-        if (TinkerUtil.getIndexInList(materialTraits, modifierIdentifier) < 0) {
+        if (!modifierIdentifier.equals(identifier) && TinkerUtil.getIndexInList(materialTraits, modifierIdentifier) < 0) {
             materialTraits.appendTag(new NBTTagString(modifierIdentifier));
         }
     }
